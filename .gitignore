@@ -1,0 +1,24 @@
+# Python / development environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# User data, local backups, credentials, and runtime output
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.previous
+*.log
+.env
+.env.*
+*.key
+*.pem
+.snippop-install
+snippop-export*.json
+data/
+backups/

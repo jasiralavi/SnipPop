@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'"><style>
+body{margin:0;background:#fff;color:#253246;font:15px sans-serif}#tools{position:sticky;top:0;padding:12px;background:#f4f6fa;border-bottom:1px solid #dce2ed;display:flex;gap:5px;flex-wrap:wrap}button,select{background:white;border:1px solid #d2d9e6;border-radius:6px;padding:6px 10px;color:#263650}button:hover{background:#e4ebff}#editor{padding:22px;min-height:260px;outline:none;line-height:1.55}#editor:empty:before{content:'Write or paste your snippet…';color:#8994a7}img{max-width:100%;height:auto}table{border-collapse:collapse}td,th{border:1px solid #a7b3c5;padding:8px;min-width:60px}#note{padding:0 22px;color:#77849a;font-size:12px}</style></head><body>
+<div id="tools">
+<button data-cmd="bold"><b>B</b></button><button data-cmd="italic"><i>I</i></button><button data-cmd="underline"><u>U</u></button>
+<select aria-label="Text size" onchange="command('fontSize',this.value)"><option value="3">Normal size</option><option value="2">Small</option><option value="4">Large</option><option value="5">Heading</option></select><input aria-label="Text color" title="Text color" type="color" value="#253246" onchange="command('foreColor',this.value)">
+<button data-cmd="insertUnorderedList">• List</button><button data-cmd="insertOrderedList">1. List</button>
+<button onclick="link()">Link</button><button onclick="table()">Table</button><button onclick="window.webkit.messageHandlers.action.postMessage('image')">Image</button>
+<button data-cmd="removeFormat">Clear format</button><button data-cmd="undo">Undo</button><button data-cmd="redo">Redo</button>
+</div><div id="editor" contenteditable="true"></div><div id="note">Plain text is generated automatically. Ctrl+S saves.</div>
+<script>
+const editor=document.getElementById('editor');let savedRange=null;document.addEventListener('selectionchange',()=>{let s=getSelection();if(s.rangeCount&&editor.contains(s.anchorNode))savedRange=s.getRangeAt(0).cloneRange()});
+function command(cmd,value=null){editor.focus();if(savedRange){let s=getSelection();s.removeAllRanges();s.addRange(savedRange)}document.execCommand(cmd,false,value)}
+document.querySelectorAll('[data-cmd]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>command(b.dataset.cmd)});
+function link(){let url=prompt('Link URL (https://…)');if(url&&/^https?:\/\//i.test(url))command('createLink',url)}
+function table(){let r=Number(prompt('Rows','3')),c=Number(prompt('Columns','2'));if(r>0&&r<=30&&c>0&&c<=12)command('insertHTML','<table>'+Array.from({length:r},()=>'<tr>'+Array.from({length:c},()=>'<td><br></td>').join('')+'</tr>').join('')+'</table><p><br></p>')}
+function setContent(value){editor.innerHTML=value}
+function getContent(){return editor.innerHTML}
+function insertImage(value){command('insertImage',value)}
+editor.addEventListener('paste',e=>{e.preventDefault();let d=e.clipboardData;let h=d.getData('text/html');if(h){window.webkit.messageHandlers.importHtml.postMessage(h);return}let file=Array.from(d.files).find(f=>f.type.startsWith('image/'));if(file){let reader=new FileReader();reader.onload=()=>window.webkit.messageHandlers.importHtml.postMessage('<img src="'+reader.result+'">');reader.readAsDataURL(file);return}command('insertText',d.getData('text/plain'))});
+editor.addEventListener('drop',e=>e.preventDefault());
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='s'){e.preventDefault();window.webkit.messageHandlers.action.postMessage('save')}});
+</script></body></html>
