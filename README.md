@@ -4,6 +4,8 @@ A lightweight, keyboard-first snippet manager for Linux. Store reusable text, fo
 
 SnipPop uses Python, GTK 3, WebKitGTK, SQLite, and the desktop keyring. It works locally without an account or cloud service.
 
+![SnipPop search window showing snippets, type icons, and login entries](images/snippop-screenshot.png)
+
 ## Features
 
 - One rich-content editor; plain text is generated automatically.
