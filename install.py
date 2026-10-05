@@ -9,7 +9,7 @@ target = Path.home() / 'Softwares/SnipPop'
 if target.exists() and not (target / '.snippop-install').exists():
     raise SystemExit('Destination exists and is not a managed SnipPop installation.')
 target.mkdir(parents=True, exist_ok=True)
-for name in ('core.py','desktop.py','snippop.py','editor.html','launch_snippop.sh','snippop.svg','README.md','COMPATIBILITY.md'):
+for name in ('core.py','desktop.py','snippop.py','editor.html','launch_snippop.sh','snippop.svg','README.md','COMPATIBILITY.md','LICENSE'):
     shutil.copy2(source / name, target / name)
 shutil.copytree(source / 'tests', target / 'tests', dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__'))
 (target / '.snippop-install').write_text('SnipPop 0.1\n')

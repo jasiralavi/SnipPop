@@ -17,7 +17,7 @@ from desktop import Clipboard, Vault, paste_command, send_paste
 
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get('SNIPPOP_DATA_DIR', str(Path.home() / '.local/share/snippop')))
-LEGACY = Path('/home/jasir/Softwares/Snippets/snippets.db')
+LEGACY = Path.home() / 'Softwares/Snippets/snippets.db'
 
 
 def message(parent, text):

@@ -1,81 +1,181 @@
 # SnipPop
 
-A native Linux snippet library with one rich editor, automatically generated plain text, and system-keyring logins.
+A lightweight, keyboard-first snippet manager for Linux. Store reusable text, formatted signatures, tables, images, links, and logins; find them in a popup and paste into the app you were using.
 
-Run `./launch_snippop.sh` or use your configured global shortcut (Super+X). Re-running the launcher brings the existing window forward. Closing the popup leaves a small background process serving clipboard data; Settings → Quit exits it.
+SnipPop uses Python, GTK 3, WebKitGTK, SQLite, and the desktop keyring. It works locally without an account or cloud service.
 
-## Installation
+## Features
 
-Install the desktop dependencies listed below, then run:
+- One rich-content editor; plain text is generated automatically.
+- Rich or plain paste, with native PNG clipboard data for image-only snippets.
+- Search keywords and content, or filter by `#tag`.
+- Pinned entries, content-type filters, and newest/oldest/most-frequent sorting.
+- Login entries with username, keyring-stored password, and website link.
+- Three-line result previews and type icons beside keywords.
+- Optional tags, configurable search memory, and close-after-paste settings.
+- Date/time placeholders, references to other snippets, JSON import/export, Trash, and rotating database backups.
+
+**Status:** early release. Chrome rich-content and LibreOffice Writer clipboard checks passed. Firefox paste remains unresolved in the test environment; Gmail, Google Docs, and GIMP-specific behavior is not yet verified. See [compatibility notes](COMPATIBILITY.md).
+
+## Install
+
+The commands below target an Ubuntu/Debian desktop with GTK 3 and WebKitGTK 4.1 packages available.
+
+### 1. Install dependencies
 
 ```sh
+sudo apt update
+sudo apt install git python3 python3-gi python3-gi-cairo \
+  gir1.2-gtk-3.0 gir1.2-webkit2-4.1 gir1.2-secret-1
+```
+
+Login entries also require a running Secret Service-compatible desktop keyring, such as GNOME Keyring. The desktop normally starts and unlocks it when you sign in.
+
+For **X11 direct paste**, install `xdotool`:
+
+```sh
+sudo apt install xdotool
+```
+
+For **Wayland direct paste**, configure `ydotool` and its daemon for your distribution. SnipPop expects a working socket at `$YDOTOOL_SOCKET` or `/run/user/$UID/.ydotool_socket`. It does not install a privileged input service or change device permissions. Copy actions remain available without a paste helper.
+
+### 2. Download and install SnipPop
+
+```sh
+git clone https://github.com/jasiralavi/SnipPop.git snippop-source
+cd snippop-source
 /usr/bin/python3 install.py
 ```
 
-This installs the application under `~/Softwares/SnipPop` and adds an app-menu launcher. Set your preferred global shortcut in the desktop's Keyboard settings. The optional `register_shortcut.py` helper adds **Ctrl+Super+X** only if unused; it does not select Super+X automatically.
+The installer copies the app to `~/Softwares/SnipPop` and adds **SnipPop** to your application menu. Keep the source checkout separate from that installation directory.
 
-The repository contains application code and synthetic test fixtures only. Snippet databases, keyring contents, exports, and local backups are not included.
+Launch from the application menu or run:
 
-## Daily use
+```sh
+~/Softwares/SnipPop/launch_snippop.sh
+```
+
+You can also run `./launch_snippop.sh` directly from the source checkout without installing. Use system Python (`/usr/bin/python3`) so the desktop libraries are available.
+
+### 3. Assign a global shortcut
+
+In your desktop's **Keyboard → Custom Shortcuts**, add:
+
+- **Name:** SnipPop
+- **Command:** the full path to `~/Softwares/SnipPop/launch_snippop.sh` (replace `~` with your home directory)
+- **Shortcut:** your preference, for example **Super+X**, if unused
+
+The optional GNOME helper, `/usr/bin/python3 register_shortcut.py`, assigns **Ctrl+Super+X** if available. It does not configure Super+X automatically.
+
+Invoking the launcher again brings the existing instance forward. On X11 it also centers the window on the current monitor; native Wayland placement and activation remain compositor-dependent.
+
+## First snippet
+
+1. Open SnipPop and press **Ctrl+N**.
+2. Enter a unique keyword, such as `email.signature`.
+3. Write or paste formatted content. Use **Image** to embed a local image, or **Capture clipboard** to replace the editor contents with the current clipboard.
+4. Press **Ctrl+S** to save.
+5. Focus the destination field in another app, invoke SnipPop, and search for your keyword.
+6. Press **Enter** to paste rich content or **Ctrl+Enter** to paste plain text.
+
+There is no separate plain-text editor. Images without text have no plain-paste version. Linked/remote images are removed during HTML cleanup; insert local copies instead. Complex formatting may change in the destination, and whole-document settings such as headers and page margins are outside snippet scope.
+
+The popup stays available in the background to serve clipboard data. **Esc** or the close button dismisses it; **Settings → Quit SnipPop** exits the process.
+
+## Search, tags, and settings
+
+Ordinary search checks the keyword and generated plain content. Exact keyword matches rank first, and the selected sort breaks ties.
+
+To add tags, enable **Settings → Show optional tags in the editor**, then enter comma-separated values such as `work, nk, email`.
+
+| Search | Result |
+|---|---|
+| `#nk` | Entries with the exact tag `nk` |
+| `#nk invoice` | Entries tagged `nk` whose keyword or content matches `invoice` |
+| `#nk #work` | Entries with both tags |
+
+Tag matching ignores case. A leading `#` in a saved tag is optional. Tag searches combine with the selected type/Pinned filter and sort order. Existing tags remain searchable when the Tags editor field is hidden.
+
+Search opens empty by default. Enable **Remember previous search when opening SnipPop** to keep it between openings of the running app. **Close after pasting snippets** controls ordinary snippets; login entries always stay open. When kept open, the popup returns without taking focus from the destination.
+
+## Logins
+
+Press **Ctrl+Shift+N** and enter a keyword, username, password, and optional HTTP/HTTPS link. The eye icon reveals or hides the password you are entering.
+
+- **Enter:** paste username.
+- **Ctrl+Enter:** retrieve and paste password.
+- **Shift+Enter:** open the link in the default browser; no automatic filling or submission.
+- Both copy shortcuts copy the username. Password copying is an explicitly labeled action in the Copy menu.
+
+Passwords are stored through libsecret in your desktop keyring. The SQLite database contains the keyword, username, link, and an opaque keyring reference. The keyring may prompt you to unlock it.
+
+Password clipboard contents expire after 20 seconds if SnipPop still owns the selection. Clipboard-history tools may retain independent copies. SnipPop pastes into the focused field and does **not** verify the website's origin; use a browser password manager when you need domain-aware filling.
+
+## Keyboard shortcuts
+
+These shortcuts apply while the search popup is focused, unless indicated otherwise.
 
 | Shortcut | Action |
 |---|---|
 | Enter | Paste rich content, image, or login username |
 | Ctrl+Enter | Paste plain text or login password |
-| Shift+Enter | Open selected login's link in the default browser |
-| Ctrl+O | Settings / Options |
-| Ctrl+/ or Ctrl+? | Keyboard shortcut guide |
-| Ctrl+C | Copy rich content or login username |
-| Ctrl+Shift+C | Copy plain content or login username |
+| Shift+Enter | Open login link |
+| Ctrl+C | Copy rich content or username |
+| Ctrl+Shift+C | Copy plain content or username |
 | Ctrl+N | Add snippet |
 | Ctrl+Shift+N | Add login |
-| Ctrl+E | Edit |
-| Ctrl+D | Duplicate into a new editor |
+| Ctrl+E | Edit selected entry |
+| Ctrl+D | Duplicate selected entry |
 | Ctrl+P | Pin/unpin |
-| Alt+1…6 | All, pinned, passwords, text only, link only, image only |
-| Alt+N / Alt+O / Alt+M | Newest, oldest, most frequent |
-| Ctrl+F | Search |
-| Delete | Move selected result to Trash (results must have focus) |
-| Ctrl+Z | Undo last deletion (results must have focus) |
-| Esc | Dismiss |
+| Ctrl+F | Focus search |
+| Ctrl+O | Settings |
+| Ctrl+/ or Ctrl+? | Shortcut guide |
+| Alt+1 / Alt+2 / Alt+3 | All / Pinned / Passwords |
+| Alt+4 / Alt+5 / Alt+6 | Text / Links / Images |
+| Alt+N / Alt+O / Alt+M | Newest / Oldest / Most frequent |
+| Delete | Move entry to Trash; results must have focus |
+| Ctrl+Z | Undo last deletion; results must have focus |
 | Ctrl+S | Save in the editor |
+| Esc | Dismiss |
 
-Search examines keyword and generated plain content only. Exact keyword matches rank first; chosen sort resolves ties. Tags are hidden by default and can be enabled in Settings. A link-only snippet is a URL or one linked label. Tables and mixed image/text content appear under All or Pinned.
+## Placeholders
 
-Login entries always stay open on paste. Settings controls close-after-paste for other snippets. The popup briefly hides to return focus to the preceding application, then reappears without taking focus if keep-open applies. Choose the destination field before opening SnipPop. Opening a login link never submits a login.
+Use `@d@` for the date, `@t@` for time, `@dt@` for both, or a custom format such as `@dt:YYYY-MM-DD@`. Reference another snippet using `@keyword@`, for example `@email.signature@`. References cannot expand login entries.
 
-## Content
+Interactive fill-in fields and automatic expansion while typing are not included.
 
-Paste rich content directly into the editor, use Capture clipboard, or write with the formatting toolbar. Insert local images with Image. Images are embedded in the stored HTML and travel with JSON exports. Plain text is generated on save; images without text have no plain-paste action.
+## Data, backups, and updates
 
-HTML is normalized to a supported subset; scripts, event handlers and remote resources are removed. Linked/remote images must be inserted as local copies. Complex email or Google Docs layouts may change; whole-document headers, footers and page settings are outside snippet scope. Image-only snippets offer actual PNG clipboard data. Mixed snippets offer HTML plus a plain fallback; browser web editors may handle embedded images differently.
+- Data lives in `~/.local/share/snippop/snippop.db`, with user-only permissions.
+- On first launch, an existing `~/Softwares/Snippets/snippets.db` is imported without modifying the original.
+- Up to seven daily database backups are retained beside the database, created on startup.
+- **Settings → Export snippets** creates a portable JSON file with embedded images. Exports exclude login entries.
+- **Settings → Import snippets** adds entries; conflicting keywords receive a `copy` suffix.
+- **Settings → Trash / Restore** recovers deleted entries.
 
-Existing `@d@`, `@t@`, `@dt@`, `@dt:YYYY-MM-DD@` and `@keyword@` references are supported. References cannot expand login entries. Fill-in fields and automatic expansion while typing are not included in this first release.
+Back up the system keyring separately: database backups cannot reconstruct passwords on another machine. Editing a login retains earlier keyring records so older database backups can still resolve them. Trash is reversible deletion, not permanent credential erasure.
 
-## Storage and recovery
+To update, quit SnipPop, then run from your source checkout:
 
-The first launch imports the existing `/home/jasir/Softwares/Snippets/snippets.db` without modifying it. Data lives in `~/.local/share/snippop/snippop.db` with user-only permissions. Up to seven daily database backups are kept alongside it. Settings provides portable JSON import/export and Trash restore. JSON exports exclude logins.
+```sh
+git pull --ff-only
+/usr/bin/python3 install.py
+```
 
-The database stores login keyword, username, link and opaque keyring reference. Passwords and a copy of the username are stored through libsecret in the system keyring. Passwords never enter the SQLite database, ordinary export or logs. Editing a login creates a new secret record; previous secret records are retained so older database backups still work. Deletion is reversible Trash, not permanent credential erasure. Back up the system keyring separately: a database backup cannot reconstruct passwords on another machine.
+Reopen SnipPop afterward. Reinstalling the application does not replace the separate user database.
 
-The keyring may prompt to unlock. Password clipboard contents expire after 20 seconds if SnipPop still owns that selection. A clipboard manager may retain its own copy despite confidentiality hints. SnipPop pastes into the focused field and does not validate the website origin; use domain-aware browser password-manager filling if that protection is required.
+## Development and testing
 
-## Desktop dependencies
+```sh
+/usr/bin/python3 -m unittest discover -s tests -v
+```
 
-System Python 3, PyGObject, GTK 3, WebKitGTK 4.1, libsecret, and Cairo are used. On Ubuntu the relevant packages are `python3-gi`, `python3-gi-cairo`, `gir1.2-gtk-3.0`, `gir1.2-webkit2-4.1`, `gir1.2-secret-1`.
+The unit suite covers storage, HTML cleanup, migration, search/tag filters, sorting, exports, placeholders, and URL validation.
 
-Wayland direct paste uses an existing ydotool service at `$YDOTOOL_SOCKET` or `/run/user/$UID/.ydotool_socket`; SnipPop does not install or grant privileges to an input service. X11 uses xdotool. Copy remains available if direct paste is unavailable.
+Desktop smoke tests in `tests/*_smoke.py` require a graphical session. They use temporary data and synthetic content, create windows, and replace clipboard contents. Some open temporary browser/Writer profiles; keyring tests create and remove synthetic credentials. Run them individually rather than as unattended tests on a busy desktop.
 
-To set a global shortcut, assign the launcher in desktop Keyboard settings. The app shortcuts above apply while SnipPop is focused.
+Report bugs through [GitHub Issues](https://github.com/jasiralavi/SnipPop/issues), including your desktop environment, X11/Wayland session, destination application, and reproduction steps. Do not include passwords or private snippet databases.
 
-## Tests
+## License
 
-`/usr/bin/python3 -m unittest discover -s tests -v` runs storage, HTML, migration, search, export and placeholder tests. Desktop smoke tests use isolated data and synthetic content; run only in a desktop session. They create temporary windows and replace the clipboard. The keyring test creates and removes a synthetic credential.
-
-The login editor’s eye icon toggles password visibility. Passwords start masked.
-
-Search starts empty on each launch by default. Enable **Remember previous search when opening SnipPop** in Settings to retain the current search between openings. Type icons appear before the pin star in the Keyword column; mixed rich content uses the document icon.
-
-## Tag filtering
-
-Type `#nk` in the search box to match the exact tag `nk`, ignoring case. Tags in the editor are comma-separated; a leading `#` in a saved tag is optional. Combine tags with text (`#nk invoice`) or require multiple tags (`#nk #work`). Tag filters also combine with the selected type or Pinned filter and sort order. Filtering existing tags works even when the optional Tags editor field is hidden.
+[MIT](LICENSE) — Copyright © 2026 Jasir Alavi. Dependencies retain their respective licenses.
